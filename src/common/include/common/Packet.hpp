@@ -12,6 +12,11 @@ namespace common
 {
     static void fillRandomData(std::vector<std::byte>& data, const std::size_t size)
     {
+        if (size < sizeof(int))
+        {
+            return;
+        }
+
         data.resize(size);
 
         // Optimized fill with 4 bytes per step
@@ -94,7 +99,6 @@ namespace common
             // Extract payload
             if (iterator >= data.size() || data.size() < m_payload.size())
             {
-                std::print("!!!!!!!!!!!!!!!!!!!!!!");
                 return iterator;
             }
 
