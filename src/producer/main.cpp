@@ -21,22 +21,6 @@ Producer:
 
 */
 
-void testPacket()
-{
-    auto packet = common::Packet(100, 12);
-    packet.debug();
-
-    auto blob = packet.marshal();
-    std::for_each(
-        blob.begin(), blob.end(), [&](const auto& item) { std::print("{:02X} ", static_cast<uint8_t>(item)); });
-    std::print("\n");
-
-    auto packetAnother = common::Packet(100, blob);
-    packetAnother.debug();
-
-    std::print("New packet is the same: {:s}\n", (packet == packetAnother ? "YES" : "NO"));
-}
-
 int main(int argc, char* argv[])
 {
     std::print("[Producer] Started\n");
