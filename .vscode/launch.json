@@ -1,0 +1,29 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug Producer",
+      "type": "lldb",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/producer/producer",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "externalConsole": false,
+      "preLaunchTask": "build-producer"
+    },
+    {
+      "name": "Debug Consumer",
+      "type": "lldb",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/consumer/consumer",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "externalConsole": false,
+      "preLaunchTask": "build-consumer"
+    }
+  ]
+}

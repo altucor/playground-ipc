@@ -29,7 +29,7 @@ int main(int argc, char* argv[])
     result = client.start();
     if (result == -1)
     {
-        std::print("[Producer] Failed to start client\n");
+        std::print("[Consumer] Failed to start client\n");
         return -1;
     }
 

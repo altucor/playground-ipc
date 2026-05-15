@@ -1,0 +1,22 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build-producer",
+      "type": "shell",
+      "command": "cmake --build build --target producer",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": ["$gcc"]
+    },
+    {
+      "label": "build-consumer",
+      "type": "shell",
+      "command": "cmake --build build --target consumer",
+      "group": "build",
+      "problemMatcher": ["$gcc"]
+    }
+  ]
+}

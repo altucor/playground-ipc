@@ -10,5 +10,4 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
     CXX_EXTENSIONS ON
 )
 
-message(${CMAKE_CURRENT_SOURCE_DIR}/include/)
 target_include_directories(${PROJECT_NAME} INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include/)

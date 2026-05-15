@@ -1,8 +1,9 @@
 #pragma once
 
 #include <cstdint>
-#include <vector>
-#include <string>
+#include <cstddef>
+#include <array>
+#include <span>
 
 namespace common
 {
@@ -12,82 +13,63 @@ namespace common
         crc8(crc8& other) = delete;
         void operator=(crc8 const& other) = delete;
 
-        crc8& crc8::getInstance()
+        static crc8& getInstance()
         {
             static crc8 instance;
             return instance;
         }
 
-        crc8::crc8(uint8_t poly)
+        std::byte calculate(const std::span<const std::byte> data)
         {
-            const size_t lutSize = 256;
-            m_lut.resize(lutSize);
+            auto crc = std::byte(0);
+
+            std::for_each(
+                data.begin(),
+                data.end(),
+                [&](const auto& item) { crc = m_lut.at(static_cast<std::size_t>(crc ^ item)); });
+
+            return crc;
+        }
+
+        template <typename... Args>
+        std::byte calculate(const Args&... args) const
+        {
+            auto crc = std::byte(0);
+
+            (
+                [&](const auto& arg)
+                {
+                    for (const auto& item : arg)
+                    {
+                        std::for_each(
+                            arg.begin(),
+                            arg.end(),
+                            [&](const auto& item) { crc = m_lut.at(static_cast<std::size_t>(crc ^ item)); });
+                    }
+                }(args),
+                ...);
+
+            return crc;
+        }
+
+    private:
+        crc8(const std::byte poly = std::byte(0xD5))
+        {
             uint8_t crc;
 
-            for (uint16_t i = 0; i < lutSize; i++)
+            for (uint16_t i = 0; i < kLutSize; i++)
             {
                 crc = i;
                 for (uint8_t j = 0; j < 8; j++)
                 {
-                    crc = (crc << 1) ^ ((crc & 0x80) ? poly : 0);
+                    crc = (crc << 1) ^ ((crc & 0x80) ? static_cast<uint8_t>(poly) : 0);
                 }
-                m_lut[i] = crc & 0xFF;
+                m_lut[i] = std::byte(crc & 0xFF);
             }
-        }
-
-        uint8_t crc8::calculate_dvb_s2(uint8_t crc, uint8_t data) const
-        {
-            crc ^= data;
-            for (uint8_t i = 0; i < 8; i++)
-            {
-                if (crc & 0x80)
-                {
-                    crc = (crc << 1) ^ 0xD5;
-                }
-                else
-                {
-                    crc = crc << 1;
-                }
-            }
-            return crc;
-        }
-
-        uint8_t crc8::calculate(const uint8_t init, const uint8_t* ptr, uint8_t len) const
-        {
-            uint8_t crc = init;
-            for (uint8_t i = 0; i < len; i++)
-            {
-                crc = calculate_dvb_s2(crc, *ptr++);
-            }
-            return crc;
-        }
-
-        uint8_t crc8::calculate(const uint8_t* ptr, uint8_t len) const
-        {
-            uint8_t crc = 0;
-            for (uint8_t i = 0; i < len; i++)
-            {
-                crc = calculate_dvb_s2(crc, *ptr++);
-            }
-            return crc;
-        }
-
-        uint8_t crc8::calculate(const std::vector<uint8_t>& data) const
-        {
-            return calculate(data.data(), data.size());
-        }
-
-        uint8_t crc8::calculate(const uint8_t type, const std::vector<uint8_t>& data) const
-        {
-            uint8_t crc = 0x00;
-            crc = calculate_dvb_s2(crc, type);
-            return calculate(crc, data.data(), data.size());
         }
 
     private:
-        crc8(uint8_t poly = 0xD5);
-
-    private:
-        std::vector<uint8_t> m_lut;
+        static const std::size_t kLutSize = 256;
+        std::array<std::byte, kLutSize> m_lut;
     };
 }
