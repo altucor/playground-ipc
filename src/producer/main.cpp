@@ -25,8 +25,6 @@ int main(int argc, char* argv[])
 {
     std::print("[Producer] Started\n");
 
-    testPacket();
-
     constexpr std::size_t kInitialSize = 100;
     std::size_t payloadSize = kInitialSize;
 
