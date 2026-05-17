@@ -22,3 +22,8 @@ cmake ../src -DCMAKE_BUILD_TYPE=Debug -DENABLE_TESTS=ON && cmake --build .
 cd build
 ctest
 ```
+
+### Debug & Sanitizers & Unit Tests build
+```
+cmake ../src -DCMAKE_BUILD_TYPE=Debug -DENABLE_TESTS=ON -DPRODUCER_WITH_SANITIZERS=ON -DCONSUMER_WITH_SANITIZERS=ON && cmake --build .
+```
