@@ -24,6 +24,8 @@ ignored
 
 */
 
+static bool g_DebugPrintPacket = false;
+
 class Session
 {
 public:
@@ -74,7 +76,10 @@ public:
                 {
                     auto packet = common::Packet();
                     packet.unmarshal(m_client);
-                    packet.debug();
+                    if (g_DebugPrintPacket)
+                    {
+                        packet.debug();
+                    }
 
                     if (packet.valid())
                     {
@@ -163,6 +168,7 @@ public:
                     std::print("[Session] Monitor:: Packets per second: {:d}\n", m_packetsPerSecond.get());
                     std::print("[Session] Monitor:: Bytes per second: {:d}\n", m_client.getRecvPerfCounter().get());
                     std::print("[Session] Monitor:: Packet receive total(valid): {:d}\n", m_packetsReceivedTotal);
+                    std::print("[Session] ------------------------------------\n");
                 }
 
                 std::print("[Session] Performance monitor thread finished\n");
@@ -195,6 +201,14 @@ int main(int argc, char* argv[])
     std::print("[Consumer] Started\n");
 
     std::stop_source stopSource;
+
+    if (argc == 2)
+    {
+        if (std::string_view(argv[1]) == "true")
+        {
+            g_DebugPrintPacket = true;
+        }
+    }
 
     auto session = Session(stopSource);
 

@@ -133,7 +133,7 @@ namespace common
                 return 0;
             }
 
-            constexpr std::size_t kChunkSize = 64;
+            constexpr std::size_t kChunkSize = 1024;
             const std::size_t remainingBytes = data.size() % kChunkSize;
             const std::size_t iterationsTotal = data.size() / kChunkSize + (remainingBytes == 0 ? 0 : 1);
 

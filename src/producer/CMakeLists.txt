@@ -10,6 +10,11 @@ if(PRODUCER_WITH_SANITIZERS)
     add_link_options(-fsanitize=address)
 endif()
 
+if(CMAKE_BUILD_TYPE MATCHES Release)
+    set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG -march=native" CACHE STRING "" FORCE)
+    set(CMAKE_C_FLAGS_RELEASE "-O3 -DNDEBUG -march=native" CACHE STRING "" FORCE)
+endif()
+
 add_executable(${PROJECT_NAME})
 
 set_target_properties(${PROJECT_NAME} PROPERTIES

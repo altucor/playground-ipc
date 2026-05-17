@@ -140,7 +140,7 @@ namespace common
             lastRead = pipe.tryReadValue(timeCount);
             if (lastRead != sizeof(timeCount))
             {
-                std::print("Failed to read timestamp value\n");
+                std::print("[Packet] Failed to read timestamp value\n");
                 return totalRead;
             }
             m_timestamp = std::chrono::system_clock::time_point(std::chrono::system_clock::duration(timeCount));
@@ -149,7 +149,7 @@ namespace common
             lastRead = pipe.tryReadValue(m_sequenceNumber);
             if (lastRead != sizeof(m_sequenceNumber))
             {
-                std::print("Failed to read sequence index value\n");
+                std::print("[Packet] Failed to read sequence index value\n");
                 return totalRead;
             }
             totalRead += lastRead;
@@ -158,7 +158,7 @@ namespace common
             lastRead = pipe.tryReadValue(payloadSize);
             if (lastRead != sizeof(payloadSize))
             {
-                std::print("Failed to read sequence index value\n");
+                std::print("[Packet] Failed to read sequence index value\n");
                 return totalRead;
             }
             totalRead += lastRead;
@@ -169,7 +169,7 @@ namespace common
                 lastRead = pipe.tryReadSome(m_payload);
                 if (lastRead != payloadSize)
                 {
-                    std::print("Failed to read payload of size: {:d}\n", payloadSize);
+                    std::print("[Packet] Failed to read payload of size: {:d}\n", payloadSize);
                     return totalRead;
                 }
                 totalRead += lastRead;
@@ -178,7 +178,7 @@ namespace common
             lastRead = pipe.tryReadValue(m_checksum);
             if (lastRead != sizeof(m_checksum))
             {
-                std::print("Failed to read sequence index value\n");
+                std::print("[Packet] Failed to read sequence index value\n");
                 return totalRead;
             }
             totalRead += lastRead;

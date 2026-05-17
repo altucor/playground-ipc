@@ -119,7 +119,7 @@ int main(int argc, char* argv[])
 
         if (argc == 3)
         {
-            if (argv[2] == "true")
+            if (std::string_view(argv[2]) == "true")
             {
                 g_DebugPrintPacket = true;
             }
