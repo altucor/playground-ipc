@@ -55,9 +55,9 @@ namespace common
             unmarshal(data);
         }
 
-        explicit Packet(const std::size_t payloadSize, const std::size_t sequenceIndex)
+        explicit Packet(const std::size_t payloadSize, const std::size_t sequenceNumber)
             : m_timestamp(std::chrono::system_clock::now())
-            , m_sequenceIndex(sequenceIndex)
+            , m_sequenceNumber(sequenceNumber)
         {
             fillRandomData(m_payload, payloadSize);
             m_checksum = m_calculateChecksum();
@@ -70,7 +70,7 @@ namespace common
             uint64_t timestamp = m_timestamp.time_since_epoch().count();
 
             appendData(out, timestamp);
-            appendData(out, m_sequenceIndex);
+            appendData(out, m_sequenceNumber);
             appendData(out, static_cast<uint64_t>(m_payload.size()));
             out.insert(out.end(), m_payload.begin(), m_payload.end());
             appendData(out, m_checksum);
@@ -92,13 +92,13 @@ namespace common
             m_timestamp = std::chrono::system_clock::time_point(std::chrono::system_clock::duration(timeCount.value()));
 
             // Extract sequence number
-            auto sequenceIndex = extractData<std::size_t>(data, iterator);
-            if (!sequenceIndex)
+            auto sequenceNumber = extractData<std::size_t>(data, iterator);
+            if (!sequenceNumber)
             {
                 return iterator;
             }
 
-            m_sequenceIndex = sequenceIndex.value();
+            m_sequenceNumber = sequenceNumber.value();
 
             // Extract payload size
             auto payloadSize = extractData<std::size_t>(data, iterator);
@@ -146,8 +146,8 @@ namespace common
             m_timestamp = std::chrono::system_clock::time_point(std::chrono::system_clock::duration(timeCount));
             totalRead += lastRead;
 
-            lastRead = pipe.tryReadValue(m_sequenceIndex);
-            if (lastRead != sizeof(m_sequenceIndex))
+            lastRead = pipe.tryReadValue(m_sequenceNumber);
+            if (lastRead != sizeof(m_sequenceNumber))
             {
                 std::print("Failed to read sequence index value\n");
                 return totalRead;
@@ -206,7 +206,7 @@ namespace common
 
         const auto& getSequenceNumber() const noexcept
         {
-            return m_sequenceIndex;
+            return m_sequenceNumber;
         }
 
         const auto& getPayload() const noexcept
@@ -226,7 +226,7 @@ namespace common
                 return false;
             }
 
-            if (m_sequenceIndex != other.m_sequenceIndex)
+            if (m_sequenceNumber != other.m_sequenceNumber)
             {
                 return false;
             }
@@ -242,7 +242,7 @@ namespace common
         void debug() const
         {
             std::print("Timestamp: {:s}\n", std::format("{:%Y-%m-%d %H:%M:%S}", m_timestamp));
-            std::print("Sequence index: {:d}\n", m_sequenceIndex);
+            std::print("Sequence number: {:d}\n", m_sequenceNumber);
             std::print("Payload [{:d}] body: ", m_payload.size());
 
             constexpr std::size_t kPayloadDebugSizePrefix = 4;
@@ -296,12 +296,12 @@ namespace common
         const std::byte m_calculateChecksum() const
         {
             return crc8::getInstance().calculate(
-                m_timeAsBytes(), std::as_bytes(std::span<const std::size_t>(&m_sequenceIndex, 1)), m_payload);
+                m_timeAsBytes(), std::as_bytes(std::span<const std::size_t>(&m_sequenceNumber, 1)), m_payload);
         }
 
     private:
         std::chrono::system_clock::time_point m_timestamp;
-        std::size_t m_sequenceIndex = 0;
+        std::size_t m_sequenceNumber = 0;
         std::vector<std::byte> m_payload = {};
         std::byte m_checksum = std::byte(0x00);
     };
