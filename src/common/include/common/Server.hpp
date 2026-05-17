@@ -20,6 +20,11 @@ namespace common
     public:
         constexpr static std::string_view kLogPrefix = "[Server] ";
 
+        explicit Server(std::stop_source& stopSource)
+            : m_stopSource(stopSource)
+        {
+        }
+
         inline bool clientConnected() const
         {
             return m_clientConnected.load();
@@ -46,12 +51,12 @@ namespace common
                 return result;
             }
 
-            m_workerThread = std::jthread(
-                [&](std::stop_token token)
+            m_workerThread = std::thread(
+                [&]()
                 {
                     std::print("{:s} Started accept listener\n", kLogPrefix);
 
-                    while (!token.stop_requested())
+                    while (!m_stopSource.stop_requested())
                     {
                         if (-1 != m_clientSocket)
                         {
@@ -79,7 +84,12 @@ namespace common
 
         int stop()
         {
-            m_workerThread.request_stop();
+            m_stopSource.request_stop();
+
+            if (m_workerThread.joinable())
+            {
+                m_workerThread.join();
+            }
 
             close(m_clientSocket);
             m_clientSocket = -1;
@@ -94,9 +104,15 @@ namespace common
             return m_clientSocket;
         }
 
+        auto& getStopSource() noexcept
+        {
+            return m_stopSource;
+        }
+
     private:
+        std::stop_source& m_stopSource;
         int m_clientSocket = -1;
-        std::jthread m_workerThread;
+        std::thread m_workerThread;
         std::atomic_bool m_clientConnected;
     };
 }

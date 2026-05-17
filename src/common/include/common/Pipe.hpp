@@ -1,5 +1,7 @@
 #pragma once
 
+#include "common/Utils.hpp"
+
 #include <sys/socket.h>
 #include <unistd.h>
 #include <sys/un.h>
@@ -72,12 +74,16 @@ namespace common
                 return 0;
             }
 
-            return ::read(static_cast<DerivedT*>(this)->getSocket(), reinterpret_cast<void*>(data.data()), data.size());
+            const std::size_t totalRead =
+                ::read(static_cast<DerivedT*>(this)->getSocket(), reinterpret_cast<void*>(data.data()), data.size());
+
+            m_recvPerfCounter.updateBatch(totalRead);
+
+            return totalRead;
         }
 
         const std::size_t tryReadSome(
             std::span<std::byte> data,
-            std::stop_token stopToken,
             const std::chrono::milliseconds& timeout = std::chrono::milliseconds(1000))
         {
             struct pollfd pollFd[1] = {};
@@ -91,7 +97,8 @@ namespace common
             constexpr auto timeoutOneShot = std::chrono::milliseconds(10);
 
             auto startTime = std::chrono::steady_clock::now();
-            while (!stopToken.stop_requested() && std::chrono::steady_clock::now() - startTime < timeout)
+            while (!static_cast<DerivedT*>(this)->getStopSource().stop_requested() &&
+                   std::chrono::steady_clock::now() - startTime < timeout)
             {
                 if (poll(pollFd, 1, timeoutOneShot.count()) != 1)
                 {
@@ -116,11 +123,10 @@ namespace common
         const std::size_t tryReadValue(T& output)
         {
             auto outputBuffer = std::as_writable_bytes(std::span<T>(&output, 1));
-            auto stopToken = std::stop_token();
-            return tryReadSome(outputBuffer, stopToken);
+            return tryReadSome(outputBuffer);
         }
 
-        std::size_t write(const std::span<const std::byte> data, std::stop_token stopToken)
+        std::size_t write(const std::span<const std::byte> data)
         {
             if (!m_isSocketValid())
             {
@@ -135,7 +141,7 @@ namespace common
 
             for (std::size_t i = 0; i < iterationsTotal; i++)
             {
-                if (stopToken.stop_requested())
+                if (static_cast<DerivedT*>(this)->getStopSource().stop_requested())
                 {
                     return written;
                 }
@@ -151,9 +157,21 @@ namespace common
                     static_cast<DerivedT*>(this)->getSocket(),
                     const_cast<std::byte*>(&*std::next(data.begin(), i * kChunkSize)),
                     amountToWrite);
+
+                m_sendPerfCounter.updateBatch(written);
             }
 
             return written;
+        }
+
+        auto& getSendPerfCounter()
+        {
+            return m_sendPerfCounter;
+        }
+
+        auto& getRecvPerfCounter()
+        {
+            return m_recvPerfCounter;
         }
 
     private:
@@ -175,5 +193,7 @@ namespace common
     protected:
         int m_socket = -1;
         struct sockaddr_un m_addr = {};
+        common::PerformanceCounter m_sendPerfCounter;
+        common::PerformanceCounter m_recvPerfCounter;
     };
 }

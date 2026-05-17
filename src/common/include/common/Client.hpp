@@ -16,6 +16,11 @@ namespace common
     public:
         constexpr static std::string_view kLogPrefix = "[Client] ";
 
+        explicit Client(std::stop_source& stopSource)
+            : m_stopSource(stopSource)
+        {
+        }
+
         int start()
         {
             std::print("{:s} Starting\n", kLogPrefix);
@@ -39,5 +44,13 @@ namespace common
         {
             return m_socket;
         }
+
+        auto& getStopSource() noexcept
+        {
+            return m_stopSource;
+        }
+
+    private:
+        std::stop_source& m_stopSource;
     };
 }
