@@ -19,7 +19,8 @@ TEST(packet, marshal_and_unmarshal)
 
     auto blob = packetFirst.marshal();
 
-    constexpr std::size_t kExpectedBlobSize = kPayloadSize + sizeof(uint64_t) + sizeof(std::size_t) + sizeof(std::byte);
+    constexpr std::size_t kExpectedBlobSize =
+        kPayloadSize + sizeof(uint64_t) + sizeof(std::size_t) + sizeof(std::size_t) + sizeof(std::byte);
     EXPECT_EQ(blob.size(), kExpectedBlobSize);
 
     auto packetSecond = common::Packet(kPayloadSize, blob);
@@ -28,5 +29,5 @@ TEST(packet, marshal_and_unmarshal)
     EXPECT_EQ(packetFirst.getTime(), packetSecond.getTime());
     EXPECT_EQ(packetFirst.getSequenceNumber(), packetSecond.getSequenceNumber());
     EXPECT_EQ(packetFirst.getPayload(), packetSecond.getPayload());
-    EXPECT_EQ(packetFirst.getChecksum(), packetSecond.getTime());
+    EXPECT_EQ(packetFirst.getChecksum(), packetSecond.getChecksum());
 }

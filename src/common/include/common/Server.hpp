@@ -55,7 +55,6 @@ namespace common
                     {
                         if (-1 != m_clientSocket)
                         {
-                            // std::print("{:s} Ignoring connection attempt, client already connected\n", kLogPrefix);
                             continue;
                         }
 

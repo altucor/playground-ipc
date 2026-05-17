@@ -1,5 +1,6 @@
 #include "common/Pipe.hpp"
 #include "common/Client.hpp"
+#include "common/Packet.hpp"
 
 #include <print>
 #include <span>
@@ -19,30 +20,52 @@ ignored
 
 */
 
+class Session
+{
+public:
+    int start()
+    {
+        if (m_client.start() != 0)
+        {
+            std::print("[Consumer] Failed to start client\n");
+            return -1;
+        }
+
+        m_worker = std::jthread(
+            [&](std::stop_token stopToken)
+            {
+                while (!stopToken.stop_requested())
+                {
+                    auto packet = common::Packet();
+                    packet.unmarshal(m_client);
+                    packet.debug();
+                    std::print("Packet valid: {:s}\n", (packet.valid() ? "YES" : "NO"));
+                    std::print(" ---------------------------------- \n");
+                }
+            });
+
+        return 0;
+    }
+
+private:
+    std::size_t m_sequenceIndex = 0;
+    common::Client m_client;
+    std::jthread m_worker;
+};
+
 int main(int argc, char* argv[])
 {
     std::print("[Consumer] Started\n");
 
-    auto client = common::Client();
+    std::stop_source stopSource;
 
-    int result = 0;
-    result = client.start();
+    auto session = Session();
+
+    int result = session.start();
     if (result == -1)
     {
-        std::print("[Consumer] Failed to start client\n");
+        std::print("[Consumer] Failed to start client session\n");
         return -1;
-    }
-
-    std::size_t total = 0;
-
-    std::vector<std::byte> readBuffer(4);
-    total = client.read(readBuffer);
-    std::print("Read: {:d}\n", total);
-    total = 0;
-
-    for (const auto& item : readBuffer)
-    {
-        std::print("Result: 0x{:X}\n", static_cast<uint8_t>(item));
     }
 
     std::this_thread::sleep_for(std::chrono::milliseconds(5000));

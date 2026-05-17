@@ -30,8 +30,10 @@ TEST(pipe, server_to_client_basic_transfer)
 
     EXPECT_TRUE(server.clientConnected());
 
+    auto stopToken = std::stop_token{};
+
     auto bufferToWrite = makeBytes({0x01, 0x02, 0x03, 0xFF, 0x05, 0x06, 0x07, 0x08});
-    EXPECT_EQ(server.write(bufferToWrite), bufferToWrite.size());
+    EXPECT_EQ(server.write(bufferToWrite, stopToken), bufferToWrite.size());
 
     std::vector<std::byte> readBuffer(bufferToWrite.size());
     EXPECT_EQ(client.read(readBuffer), bufferToWrite.size());

@@ -19,15 +19,13 @@ namespace common
             return instance;
         }
 
-        std::byte calculate(const std::span<const std::byte> data)
+        std::byte calculate(const std::span<const std::byte> data, std::byte initial = std::byte(0x00)) const
         {
-            auto crc = std::byte(0);
-
-            std::for_each(
-                data.begin(),
-                data.end(),
-                [&](const auto& item) { crc = m_lut.at(static_cast<std::size_t>(crc ^ item)); });
-
+            auto crc = initial;
+            for (const auto& item : data)
+            {
+                crc = m_lut.at(static_cast<uint8_t>(crc ^ item));
+            }
             return crc;
         }
 
@@ -35,20 +33,7 @@ namespace common
         std::byte calculate(const Args&... args) const
         {
             auto crc = std::byte(0);
-
-            (
-                [&](const auto& arg)
-                {
-                    for (const auto& item : arg)
-                    {
-                        std::for_each(
-                            arg.begin(),
-                            arg.end(),
-                            [&](const auto& item) { crc = m_lut.at(static_cast<std::size_t>(crc ^ item)); });
-                    }
-                }(args),
-                ...);
-
+            (..., ([&](const auto& arg) { crc = calculate(std::span<const std::byte>(arg), crc); }(args)));
             return crc;
         }
 
