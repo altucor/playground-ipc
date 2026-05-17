@@ -23,13 +23,27 @@ Producer:
 
 */
 
+static bool g_DebugPrintPacket = false;
+
 class Session
 {
 public:
     explicit Session(std::stop_source& stopSource, const std::size_t payloadSize)
         : m_stopSource(stopSource)
         , m_payloadSize(payloadSize)
+        , m_server(stopSource)
     {
+    }
+
+    ~Session()
+    {
+        m_stopSource.request_stop();
+        if (m_worker.joinable())
+        {
+            m_worker.join();
+        }
+
+        m_server.stop();
     }
 
     int start(std::chrono::milliseconds timeout)
@@ -54,23 +68,25 @@ public:
             return -2;
         }
 
-        m_worker = std::jthread(
-            [&](std::stop_token stopToken)
+        m_worker = std::thread(
+            [&]()
             {
-                while (!stopToken.stop_requested())
+                while (!m_stopSource.stop_requested())
                 {
                     auto packet = common::Packet(m_payloadSize, m_sequenceIndex);
-                    packet.debug();
+
+                    if (g_DebugPrintPacket)
+                    {
+                        packet.debug();
+                    }
+
                     auto packetData = packet.marshal();
-                    if (m_server.write(packetData, stopToken) != packetData.size())
+                    if (m_server.write(packetData) != packetData.size())
                     {
                         std::print("[Session] Error sending packet\n");
                     }
 
                     m_sequenceIndex++;
-
-                    // TODO: remove sleep. Right now used only to limit debug message spamming
-                    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
                 }
             });
 
@@ -80,9 +96,12 @@ public:
 private:
     std::stop_source& m_stopSource;
     const std::size_t m_payloadSize = 0;
-    std::size_t m_sequenceIndex = 0;
+    // We need to set sequence index below to "1" just
+    // because index "0" will be treat as duplicate on consumer side
+    // So all sending will start from index "1"
+    std::size_t m_sequenceIndex = 1;
     common::Server m_server;
-    std::jthread m_worker;
+    std::thread m_worker;
 };
 
 int main(int argc, char* argv[])
@@ -94,15 +113,23 @@ int main(int argc, char* argv[])
     constexpr std::size_t kInitialSize = 100;
     std::size_t payloadSize = kInitialSize;
 
-    if (argc == 2)
+    if (argc >= 2)
     {
         payloadSize = std::atoll(argv[1]);
+
+        if (argc == 3)
+        {
+            if (argv[2] == "true")
+            {
+                g_DebugPrintPacket = true;
+            }
+        }
     }
 
-    std::print("Payload size set to: {:d}\n", payloadSize);
+    std::print("[Producer] Payload size set to: {:d}\n", payloadSize);
 
     auto session = Session(stopSource, payloadSize);
-    int result = session.start(std::chrono::milliseconds(3000));
+    int result = session.start(std::chrono::milliseconds(5000));
     if (result != 0)
     {
         std::print("[Producer] Failed to start server session\n");

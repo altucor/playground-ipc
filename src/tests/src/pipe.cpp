@@ -9,13 +9,15 @@
 #include <span>
 #include <chrono>
 #include <algorithm>
+#include <stop_token>
 
 using namespace common;
 
 TEST(pipe, server_to_client_basic_transfer)
 {
-    auto server = Server();
-    auto client = Client();
+    auto stopSource = std::stop_source{};
+    auto server = Server(stopSource);
+    auto client = Client(stopSource);
 
     EXPECT_EQ(server.start(), 0);
 
@@ -30,13 +32,13 @@ TEST(pipe, server_to_client_basic_transfer)
 
     EXPECT_TRUE(server.clientConnected());
 
-    auto stopToken = std::stop_token{};
-
     auto bufferToWrite = makeBytes({0x01, 0x02, 0x03, 0xFF, 0x05, 0x06, 0x07, 0x08});
-    EXPECT_EQ(server.write(bufferToWrite, stopToken), bufferToWrite.size());
+    EXPECT_EQ(server.write(bufferToWrite), bufferToWrite.size());
 
     std::vector<std::byte> readBuffer(bufferToWrite.size());
     EXPECT_EQ(client.read(readBuffer), bufferToWrite.size());
 
     EXPECT_TRUE(std::ranges::equal(bufferToWrite, readBuffer));
+
+    stopSource.request_stop();
 }

@@ -163,13 +163,10 @@ namespace common
             }
             totalRead += lastRead;
 
-            std::print("[Packet] Unmarshal from pipe payload size: 0x{:02X}\n", payloadSize);
-
             if (payloadSize)
             {
                 m_payload.resize(payloadSize);
-                auto stopToken = std::stop_token();
-                lastRead = pipe.tryReadSome(m_payload, stopToken);
+                lastRead = pipe.tryReadSome(m_payload);
                 if (lastRead != payloadSize)
                 {
                     std::print("Failed to read payload of size: {:d}\n", payloadSize);
@@ -191,12 +188,7 @@ namespace common
 
         bool valid() const
         {
-            auto temp = m_calculateChecksum();
-            std::print(
-                "Checksum current: 0x{:02X} - calculated: 0x{:02X}\n",
-                static_cast<uint8_t>(m_checksum),
-                static_cast<uint8_t>(temp));
-            return m_checksum == temp;
+            return m_checksum == m_calculateChecksum();
         }
 
         const auto& getTime() const noexcept
@@ -241,25 +233,28 @@ namespace common
 
         void debug() const
         {
-            std::print("Timestamp: {:s}\n", std::format("{:%Y-%m-%d %H:%M:%S}", m_timestamp));
-            std::print("Sequence number: {:d}\n", m_sequenceNumber);
-            std::print("Payload [{:d}] body: ", m_payload.size());
+            std::print("[{:s}] ", std::format("{:%Y-%m-%d %H:%M:%S}", m_timestamp));
+            std::print("[{:07d}] ", m_sequenceNumber);
+            std::print("Body[{:d}]: ", m_payload.size());
 
-            constexpr std::size_t kPayloadDebugSizePrefix = 4;
-            std::for_each(
-                m_payload.begin(),
-                std::next(m_payload.begin(), kPayloadDebugSizePrefix),
-                [&](const auto& item) { std::print("{:02X} ", static_cast<uint8_t>(item)); });
+            if (m_payload.size())
+            {
+                constexpr std::size_t kPayloadDebugSizePrefix = 4;
+                std::for_each(
+                    m_payload.begin(),
+                    std::next(m_payload.begin(), kPayloadDebugSizePrefix),
+                    [&](const auto& item) { std::print("{:02X} ", static_cast<uint8_t>(item)); });
 
-            std::print("... ");
+                std::print("... ");
 
-            constexpr std::size_t kPayloadDebugSizeSuffix = 4;
-            std::for_each(
-                std::next(m_payload.begin(), m_payload.size() - kPayloadDebugSizeSuffix),
-                m_payload.end(),
-                [&](const auto& item) { std::print("{:02X} ", static_cast<uint8_t>(item)); });
+                constexpr std::size_t kPayloadDebugSizeSuffix = 4;
+                std::for_each(
+                    std::next(m_payload.begin(), m_payload.size() - kPayloadDebugSizeSuffix),
+                    m_payload.end(),
+                    [&](const auto& item) { std::print("{:02X} ", static_cast<uint8_t>(item)); });
+            }
 
-            std::print("\nChecksum: 0x{:X}\n", static_cast<uint8_t>(m_checksum));
+            std::print(" Checksum: 0x{:X}\n", static_cast<uint8_t>(m_checksum));
         }
 
     private:
