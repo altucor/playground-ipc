@@ -1,6 +1,8 @@
 #pragma once
 
 #include "common/Utils.hpp"
+#include "common/KeyboardEventHandler.hpp"
+#include "common/SignalEventHandler.hpp"
 
 #include <sys/socket.h>
 #include <unistd.h>
@@ -74,6 +76,12 @@ namespace common
                 return 0;
             }
 
+            while (keyboard::EventHandler::getInstance().shouldPause() ||
+                   signaling::EventHandler::getInstance().shouldPause())
+            {
+                // do nothing wait
+            }
+
             const std::size_t totalRead =
                 ::read(static_cast<DerivedT*>(this)->getSocket(), reinterpret_cast<void*>(data.data()), data.size());
 
@@ -144,6 +152,12 @@ namespace common
                 if (static_cast<DerivedT*>(this)->getStopSource().stop_requested())
                 {
                     return written;
+                }
+
+                while (keyboard::EventHandler::getInstance().shouldPause() ||
+                       signaling::EventHandler::getInstance().shouldPause())
+                {
+                    // do nothing wait
                 }
 
                 // Handle remainder bytes
